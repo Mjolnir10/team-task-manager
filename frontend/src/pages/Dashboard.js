@@ -6,6 +6,8 @@ import styled from 'styled-components';
 import { FaProjectDiagram, FaTasks, FaClipboardList, FaExclamationTriangle, FaPlus, FaArrowRight } from 'react-icons/fa';
 import { format, isAfter, parseISO } from 'date-fns';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const Header = styled.div`
   margin-bottom: 35px;
 `;
@@ -263,13 +265,15 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [projectsRes, tasksRes] = await Promise.all([
-          axios.get('/api/projects'),
-          axios.get('/api/tasks')
+          axios.get(`${API_URL}/api/projects`),
+          axios.get(`${API_URL}/api/tasks`)
         ]);
-        setProjects(projectsRes.data);
-        setTasks(tasksRes.data);
+        setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
+        setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setProjects([]);
+        setTasks([]);
       } finally {
         setLoading(false);
       }

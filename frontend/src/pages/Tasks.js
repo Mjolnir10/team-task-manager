@@ -4,6 +4,8 @@ import styled from 'styled-components';
 import { FaPlus, FaFilter, FaEdit, FaTrash, FaUser, FaCalendarAlt, FaSearch } from 'react-icons/fa';
 import { format, parseISO } from 'date-fns';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const Container = styled.div``;
 
 const Header = styled.div`
@@ -312,13 +314,15 @@ const Tasks = () => {
   const fetchData = async () => {
     try {
       const [tasksRes, projectsRes] = await Promise.all([
-        axios.get('/api/tasks'),
-        axios.get('/api/projects')
+        axios.get(`${API_URL}/api/tasks`),
+        axios.get(`${API_URL}/api/projects`)
       ]);
-      setTasks(tasksRes.data);
-      setProjects(projectsRes.data);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+      setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setTasks([]);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -327,7 +331,7 @@ const Tasks = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/tasks', newTask);
+      await axios.post(`${API_URL}/api/tasks`, newTask);
       setNewTask({ title: '', description: '', projectId: '', assignedTo: '', priority: 'Medium', dueDate: '' });
       setShowModal(false);
       fetchData();
@@ -339,7 +343,7 @@ const Tasks = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`/api/tasks/${editingTask._id}`, newTask);
+      await axios.put(`${API_URL}/api/tasks/${editingTask._id}`, newTask);
       setNewTask({ title: '', description: '', projectId: '', assignedTo: '', priority: 'Medium', dueDate: '' });
       setEditingTask(null);
       setShowModal(false);
@@ -352,7 +356,7 @@ const Tasks = () => {
   const handleDelete = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
-        await axios.delete(`/api/tasks/${taskId}`);
+        await axios.delete(`${API_URL}/api/tasks/${taskId}`);
         fetchData();
       } catch (error) {
         console.error('Error deleting task:', error);
@@ -374,7 +378,7 @@ const Tasks = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = task.title?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProject = !filterProject || task.project?._id === filterProject;
     const matchesStatus = !filterStatus || task.status === filterStatus;
     return matchesSearch && matchesProject && matchesStatus;

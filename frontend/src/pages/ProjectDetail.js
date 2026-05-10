@@ -6,6 +6,8 @@ import { FaArrowLeft, FaUsers, FaTasks, FaUserPlus, FaCalendarAlt, FaPlus } from
 import { format, parseISO, isAfter } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const Container = styled.div``;
 
 const Header = styled.div`
@@ -287,11 +289,11 @@ const ProjectDetail = () => {
   const fetchProjectData = async () => {
     try {
       const [projectRes, tasksRes] = await Promise.all([
-        axios.get(`/api/projects/${id}`),
-        axios.get(`/api/projects/${id}/tasks`)
+        axios.get(`${API_URL}/api/projects/${id}`),
+        axios.get(`${API_URL}/api/projects/${id}/tasks`)
       ]);
       setProject(projectRes.data);
-      setTasks(tasksRes.data);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
     } catch (error) {
       console.error('Error fetching project:', error);
     } finally {
@@ -302,10 +304,8 @@ const ProjectDetail = () => {
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      // First, find user by email
-      const allProjects = await axios.get('/api/projects');
-      // Search for user - in a real app, you'd have a search users API
-      alert('Member search feature - please use the Team page to find members');
+      await axios.get(`${API_URL}/api/users/search?q=${memberEmail}`);
+      alert('Please use the Team page to add members by email');
       setShowAddMember(false);
     } catch (error) {
       console.error('Error adding member:', error);
@@ -315,7 +315,7 @@ const ProjectDetail = () => {
   const handleAddTask = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/tasks', { ...newTask, projectId: id });
+      await axios.post(`${API_URL}/api/tasks`, { ...newTask, projectId: id });
       setNewTask({ title: '', description: '', assignedTo: '', priority: 'Medium', dueDate: '' });
       setShowAddTask(false);
       fetchProjectData();
@@ -326,7 +326,7 @@ const ProjectDetail = () => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      await axios.put(`/api/tasks/${taskId}`, { status: newStatus });
+      await axios.put(`${API_URL}/api/tasks/${taskId}`, { status: newStatus });
       fetchProjectData();
     } catch (error) {
       console.error('Error updating task:', error);
@@ -455,9 +455,12 @@ const ProjectDetail = () => {
                 onChange={e => setMemberEmail(e.target.value)}
                 required
               />
+              <p style={{ fontSize: '14px', color: '#888', marginBottom: '15px' }}>
+                Please use the Team page to add members by their registered email.
+              </p>
               <ButtonGroup>
                 <Button type="button" onClick={() => setShowAddMember(false)}>Cancel</Button>
-                <Button type="submit" primary>Add Member</Button>
+                <Button type="submit" primary>Go to Team</Button>
               </ButtonGroup>
             </form>
           </ModalContent>

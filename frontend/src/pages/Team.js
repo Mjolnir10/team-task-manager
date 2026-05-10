@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import styled from 'styled-components';
-import { FaUsers, FaSearch, FaEnvelope, FaUserPlus, FaUser, FaProjectDiagram } from 'react-icons/fa';
+import { FaUsers, FaSearch, FaUserPlus, FaUser, FaProjectDiagram } from 'react-icons/fa';
+
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const Container = styled.div``;
 
@@ -294,13 +296,15 @@ const Team = () => {
   const fetchData = async () => {
     try {
       const [projectsRes, tasksRes] = await Promise.all([
-        axios.get('/api/projects'),
-        axios.get('/api/tasks')
+        axios.get(`${API_URL}/api/projects`),
+        axios.get(`${API_URL}/api/tasks`)
       ]);
-      setProjects(projectsRes.data);
-      setTasks(tasksRes.data);
+      setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : []);
+      setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setProjects([]);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -314,8 +318,7 @@ const Team = () => {
     }
 
     try {
-      // Search for user by email
-      const res = await axios.get(`/api/users/search?q=${inviteEmail}`);
+      const res = await axios.get(`${API_URL}/api/users/search?q=${inviteEmail}`);
       const foundUser = res.data[0];
 
       if (!foundUser) {
@@ -323,14 +326,12 @@ const Team = () => {
         return;
       }
 
-      // Check if already a member
       if (selectedProjectData.members?.some(m => m._id === foundUser._id)) {
         setMessage({ type: 'error', text: 'User is already a member of this project' });
         return;
       }
 
-      // Add user to project
-      await axios.post('/api/users/add-to-project', {
+      await axios.post(`${API_URL}/api/users/add-to-project`, {
         userId: foundUser._id,
         projectId: selectedProject
       });
@@ -351,8 +352,8 @@ const Team = () => {
   const uniqueMembers = allMembers.filter((m, i, arr) => arr.findIndex(x => x._id === m._id) === i);
 
   const filteredMembers = uniqueMembers.filter(m =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email.toLowerCase().includes(searchTerm.toLowerCase())
+    m.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const selectedProjectData = projects.find(p => p._id === selectedProject);

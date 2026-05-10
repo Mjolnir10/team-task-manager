@@ -4,6 +4,8 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { FaPlus, FaUsers, FaArrowLeft, FaUserCog, FaCalendarAlt } from 'react-icons/fa';
 
+const API_URL = process.env.REACT_APP_API_URL || '';
+
 const Container = styled.div``;
 
 const Header = styled.div`
@@ -234,10 +236,11 @@ const Projects = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get('/api/projects');
-      setProjects(res.data);
+      const res = await axios.get(`${API_URL}/api/projects`);
+      setProjects(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -246,7 +249,7 @@ const Projects = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/projects', newProject);
+      await axios.post(`${API_URL}/api/projects`, newProject);
       setNewProject({ name: '', description: '' });
       setShowModal(false);
       fetchProjects();
